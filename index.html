@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MARSCHALL/ES</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400&family=Sora:wght@400&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+  /* Layout: one centered console, two mirrored panels joined by a translate core; dark-only by choice. */
+  :root {
+    --bg: #070b14;
+    --panel: #0d1422;
+    --line: #1d2a40;
+    --line-hi: #2f4566;
+    --fg: #dbe6f5;
+    --muted: #7d8ea8;
+    --accent: #5fd4ff;
+    --accent-2: #9b8cff;
+    --danger: #ff8a8a;
+    --display: "Oxanium", "Sora", system-ui, sans-serif;
+    --body: "Sora", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    color-scheme: dark;
+  }
+  *, *::before, *::after { box-sizing: border-box; font-weight: 400; font-style: normal; }
+  html, body { min-height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 40px 28px;
+    background-image:
+      radial-gradient(60rem 30rem at 50% -10%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%),
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: auto, 48px 48px, 48px 48px;
+    background-position: center, center, center;
+    background-attachment: fixed;
+  }
+  body::after {
+    content: ""; position: fixed; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 40%, var(--bg) 100%);
+    z-index: -1;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 28px; }
+
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(26px, 4vw, 34px);
+    letter-spacing: 0.04em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  h1 span { color: var(--accent); }
+  .tag {
+    font-family: var(--mono); font-size: 12px; color: var(--muted);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .tag i { font-style: normal; color: var(--accent); }
+
+  .console {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 16px;
+    align-items: stretch;
+  }
+  .panel {
+    position: relative;
+    background: color-mix(in srgb, var(--panel) 92%, transparent);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-width: 0;
+    transition: border-color .2s;
+    clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+  }
+  .panel:focus-within { border-color: var(--line-hi); }
+  .panel.active { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 12px 14px; border-bottom: 1px solid var(--line);
+  }
+  .side-label { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
+
+  .select { position: relative; min-width: 0; flex: 1 1 auto; max-width: 260px; }
+  select {
+    appearance: none; -webkit-appearance: none;
+    width: 100%;
+    background: var(--bg);
+    color: var(--fg);
+    border: 1px solid var(--line-hi);
+    border-radius: 3px;
+    padding: 8px 34px 8px 12px;
+    font-family: var(--body); font-size: 14px;
+    cursor: pointer;
+  }
+  select:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
+  .select::after {
+    content: ""; position: absolute; right: 12px; top: 50%;
+    width: 7px; height: 7px; margin-top: -5px;
+    border-right: 1px solid var(--accent); border-bottom: 1px solid var(--accent);
+    transform: rotate(45deg); pointer-events: none;
+  }
+
+  textarea {
+    width: 100%; min-height: 260px; resize: vertical;
+    background: transparent; color: var(--fg);
+    border: 0; outline: none;
+    padding: 16px;
+    font-family: var(--body); font-size: 17px; line-height: 1.6;
+  }
+  textarea::placeholder { color: color-mix(in srgb, var(--muted) 70%, transparent); }
+
+  .panel-foot {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+    padding: 10px 14px; border-top: 1px solid var(--line);
+  }
+  .count { font-family: var(--mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .btn {
+    font-family: var(--display); font-size: 12px; letter-spacing: 0.08em;
+    color: var(--fg); background: transparent;
+    border: 1px solid var(--line-hi); border-radius: 3px;
+    padding: 7px 12px; cursor: pointer;
+    transition: border-color .15s, color .15s, background .15s;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
+  .btn.ok { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+  .core { display: grid; place-items: center; align-content: center; gap: 10px; }
+  .go {
+    width: 64px; height: 64px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--bg);
+    border: 1px solid color-mix(in srgb, var(--accent) 60%, var(--line));
+    color: var(--accent); cursor: pointer;
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 6%, transparent), 0 0 30px color-mix(in srgb, var(--accent) 18%, transparent);
+    transition: transform .25s, box-shadow .2s;
+  }
+  .go:hover { box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 10%, transparent), 0 0 40px color-mix(in srgb, var(--accent) 30%, transparent); }
+  .go:focus-visible { outline: 1px solid var(--accent); outline-offset: 4px; }
+  .go svg { width: 26px; height: 26px; transition: transform .3s; }
+  .go.rev svg { transform: rotate(180deg); }
+  .go.busy { animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 12px color-mix(in srgb, var(--accent) 4%, transparent), 0 0 50px color-mix(in srgb, var(--accent-2) 35%, transparent); } }
+  .core-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; text-align: center; }
+
+  .status {
+    min-height: 1.5em;
+    font-family: var(--mono); font-size: 12px; color: var(--muted);
+    text-align: center;
+  }
+  .status.err { color: var(--danger); }
+
+  footer {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+    font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.06em;
+    padding-top: 8px; border-top: 1px solid var(--line);
+  }
+  .credit { opacity: .75; }
+  .credit b { color: var(--fg); }
+
+  @media (max-width: 760px) {
+    .console { grid-template-columns: minmax(0, 1fr); }
+    .core { grid-auto-flow: column; justify-content: center; }
+    .go svg { transform: rotate(90deg); }
+    .go.rev svg { transform: rotate(-90deg); }
+    textarea { min-height: 170px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>MARSCHALL<span>/</span>ES</h1>
+    <div class="tag">DE · EN <i>⇄</i> ES-AR · ES-VE · ES-CL · ES-CO</div>
+  </header>
+
+  <main class="console">
+    <section class="panel active" id="panelL" aria-label="Deutsch oder Englisch">
+      <div class="panel-head">
+        <span class="side-label">Quelle</span>
+        <label class="select">
+          <select id="langL" aria-label="Sprache links">
+            <option value="de">Deutsch</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+      </div>
+      <textarea id="textL" spellcheck="true" placeholder="Text auf Deutsch oder Englisch eingeben …">Guten Tag, ich wollte kurz nachfragen, ob unser Termin morgen um 10 Uhr noch steht.</textarea>
+      <div class="panel-foot">
+        <span class="count" id="countL">0 Zeichen</span>
+        <div class="actions">
+          <button class="btn" id="copyL" type="button">COPY THIS SHIIT</button>
+          <button class="btn" id="addL" type="button">ADD THIS SHIIT</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="core">
+      <button class="go" id="go" type="button" aria-label="Übersetzen" title="Übersetzen (⌘/Strg + Enter)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15"/><path d="M13 6l6 6-6 6"/></svg>
+      </button>
+      <div class="core-label" id="dirLabel">DE → ES-AR</div>
+    </div>
+
+    <section class="panel" id="panelR" aria-label="Spanisch">
+      <div class="panel-head">
+        <span class="side-label">Español</span>
+        <label class="select">
+          <select id="langR" aria-label="Sprache rechts">
+            <option value="ar">Español (Argentina)</option>
+            <option value="ve">Español (Venezuela)</option>
+            <option value="cl">Español (Chile)</option>
+            <option value="co">Español (Colombia)</option>
+          </select>
+        </label>
+      </div>
+      <textarea id="textR" spellcheck="true" placeholder="Escribí o pegá tu texto en español …">Buen día, quería consultar si sigue en pie nuestra reunión de mañana a las 10.</textarea>
+      <div class="panel-foot">
+        <span class="count" id="countR">0 Zeichen</span>
+        <div class="actions">
+          <button class="btn" id="copyR" type="button">COPY THIS SHIIT</button>
+          <button class="btn" id="addR" type="button">ADD THIS SHIIT</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="status" id="status" role="status" aria-live="polite">Beispiel geladen · In ein Feld tippen, dann übersetzen (⌘/Strg + Enter)</div>
+
+  <footer>
+    <span>Professionell · natürlich · regional authentisch</span>
+    <span class="credit">by <b>Marschallgrande</b></span>
+  </footer>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
